@@ -38,6 +38,7 @@ class CheckoutCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
                   padding: EdgeInsets.all(10),
@@ -49,39 +50,32 @@ class CheckoutCard extends StatelessWidget {
                   ),
                   child: SvgPicture.asset("assets/icons/receipt.svg"),
                 ),
-                Spacer(),
-                Text("Add voucher code"),
-                const SizedBox(width: 10),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: 12,
-                  color: kTextColor,
-                )
-              ],
-            ),
-            SizedBox(height: getProportionateScreenHeight(20)),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
                 Text.rich(
                   TextSpan(
                     text: "Total:\n",
+                    style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.black,
+                        fontWeight: FontWeight.w400),
                     children: [
                       TextSpan(
-                        text: "\$337.15",
-                        style: TextStyle(fontSize: 16, color: Colors.black),
+                        text: "100.337.650 XOF",
+                        style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.black,
+                            fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
                 ),
-                SizedBox(
-                  width: getProportionateScreenWidth(190),
-                  child: DefaultButton(
-                    text: "Check Out",
-                    press: () {},
-                  ),
-                ),
               ],
+            ),
+            SizedBox(height: getProportionateScreenHeight(20)),
+            Center(
+              child: DefaultButton(
+                text: "Générer le code QR",
+                press: () {},
+              ),
             ),
           ],
         ),
