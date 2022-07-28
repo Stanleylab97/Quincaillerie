@@ -59,7 +59,7 @@ class CheckoutCard extends StatelessWidget {
                         fontWeight: FontWeight.w400),
                     children: [
                       TextSpan(
-                        text: "100.337.150 XOF",
+                        text: "100.337.650 XOF",
                         style: TextStyle(
                             fontSize: 18,
                             color: Colors.black,
