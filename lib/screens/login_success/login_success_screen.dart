@@ -1,14 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:shop_app/screens/cart/cart_screen.dart';
 
 import 'components/body.dart';
 
-class LoginSuccessScreen extends StatelessWidget {
+class LoginSuccessScreen extends StatefulWidget {
   static String routeName = "/login_success";
+
+  @override
+  State<LoginSuccessScreen> createState() => _LoginSuccessScreenState();
+}
+
+class _LoginSuccessScreenState extends State<LoginSuccessScreen> {
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Duration(seconds: 1),(() => Navigator.pushReplacementNamed(context, CartScreen.routeName)));
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: SizedBox(),
         title: Text("Login Success"),
       ),
       body: Body(),

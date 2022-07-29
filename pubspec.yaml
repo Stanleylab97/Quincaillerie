@@ -31,6 +31,15 @@ dependencies:
   flutter_svg: ^0.22.0 # help us to use SVG in our app
   provider: ^6.0.0 # for State management
   font_awesome_flutter: ^10.1.0
+  lottie: ^1.4.0
+  substring_highlight: ^1.0.33
+  http: ^0.13.4
+  logger: ^1.1.0
+  shared_preferences: ^2.0.15
+  data_connection_checker_tv: ^0.3.5-nullsafety
+  another_flushbar: ^1.10.29
+  qr_flutter: ^4.0.0
+  path_provider: ^2.0.11
 
 dev_dependencies:
   flutter_test:

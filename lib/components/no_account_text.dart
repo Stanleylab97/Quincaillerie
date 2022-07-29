@@ -15,13 +15,13 @@ class NoAccountText extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          "Don’t have an account? ",
+          "Pas de compte? ",
           style: TextStyle(fontSize: getProportionateScreenWidth(16)),
         ),
         GestureDetector(
-          onTap: () => Navigator.pushNamed(context, SignUpScreen.routeName),
+         // onTap: () => Navigator.pushNamed(context, SignUpScreen.routeName),
           child: Text(
-            "Sign Up",
+            "Contactez l'administrateur",
             style: TextStyle(
                 fontSize: getProportionateScreenWidth(16),
                 color: kPrimaryColor),

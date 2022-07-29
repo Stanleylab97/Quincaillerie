@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop_app/components/default_button.dart';
+import 'package:shop_app/screens/cart/qr_code_genarator.dart';
 
 import '../../../constants.dart';
 import '../../../size_config.dart';
@@ -72,12 +73,49 @@ class CheckoutCard extends StatelessWidget {
             ),
             SizedBox(height: getProportionateScreenHeight(20)),
             Center(
-              child: DefaultButton(
+              child: 
+              DefaultButton(
                 text: "Générer le code QR",
-                press: () {},
+                press: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context)=> QrCodeGenerator(codeFacture: "1254848"))) ;
+                },
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class DefaultButton extends StatelessWidget {
+  const DefaultButton({
+    Key? key,
+    this.text,
+    this.press,
+  }) : super(key: key);
+  final String? text;
+  final Function? press;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: getProportionateScreenHeight(56),
+      child: TextButton(
+        style: TextButton.styleFrom(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          primary: Colors.white,
+          backgroundColor: kPrimaryColor,
+        ),
+        onPressed: press as void Function()?,
+        child: Text(
+          text!,
+          style: TextStyle(
+            fontSize: getProportionateScreenWidth(18),
+            color: Colors.white,
+          ),
         ),
       ),
     );
