@@ -6,40 +6,25 @@ import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NetworkHandler {
-  String baseurl =
-      "http://173.249.38.148:9094"; //https://stark-garden-07837.herokuapp.com/
+  String baseurl ="http://173.249.38.148:9094"; 
   var log = Logger();
   
 
 
-  Future get(String url, String token) async {
-    // String token = await storage.read(key: "token");
+  Future<http.Response> get(String url) async {
+    final prefs = await SharedPreferences.getInstance(); 
+    String token = prefs.getString("token").toString();
+   
     url = formater(url);
-
-    // /user/register
-    var response =
-        await http.get(Uri.parse(url),headers: {"Authorization": "Bearer $token"}); //,headers: {"Authorization": "Bearer $token"},
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      log.i(response.body);
-      return json.decode(response.body);
-    }
-    /* log.i(response.body);
-    log.i(response.statusCode); */
+    return await http.get(Uri.parse(url),headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    }); 
+    
   }
 
-/*   Future get(String url) async {
-    // String token = await storage.read(key: "token");
-    url = formater(url);
-    // /user/register
-    var response = await http.get(url); //,headers: {"Authorization": "Bearer $token"},
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      log.i(response.body);
-      return json.decode(response.body);
-    }
-    log.i(response.body);
-    log.i(response.statusCode);
-  }
- */
+
   Future<http.Response> post(String url, String token, Map<String, String> body) async {
    
     url = formater(url);

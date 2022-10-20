@@ -40,6 +40,16 @@ dependencies:
   another_flushbar: ^1.10.29
   qr_flutter: ^4.0.0
   path_provider: ^2.0.11
+  flutter_secure_storage: ^5.0.2
+  cherry_toast: ^1.0.6
+  flutter_bloc: ^8.0.1
+  equatable: ^2.0.3
+  esc_pos_printer: ^4.1.0
+  intl:
+  rxdart: ^0.26.0
+  flutter_telpo: ^0.0.3
+  #telpo_flutter_sdk: ^0.1.1
+
 
 dev_dependencies:
   flutter_test:

@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:another_flushbar/flushbar.dart';
+import 'package:cherry_toast/cherry_toast.dart';
+import 'package:cherry_toast/resources/arrays.dart';
 import 'package:data_connection_checker_tv/data_connection_checker.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -15,6 +17,8 @@ import 'package:shop_app/screens/login_success/login_success_screen.dart';
 import '../../../components/default_button.dart';
 import '../../../constants.dart';
 import '../../../size_config.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 //import 'package:data_connection_checker/data_connection_checker.dart';
 
 class SignForm extends StatefulWidget {
@@ -178,6 +182,7 @@ class _SignFormState extends State<SignForm> {
   login() async {
     if (_formKey.currentState!.validate()) {
       final prefs = await SharedPreferences.getInstance();
+      final storage = new FlutterSecureStorage();
 
       setState(() {
         circular = true;
@@ -194,8 +199,11 @@ class _SignFormState extends State<SignForm> {
         if (response.statusCode == 200) {
           Map<String, dynamic> output = json.decode(response.body);
 
-          log.v(response.body);
+          log.v(output["token"]);
           await prefs.setString('token', output["token"]);
+          log.v(prefs.getString("token"));
+
+          // await storage.write(key: "token" , value:  output["token"]);
           await prefs.setString('username', output["userName"]);
           await prefs.setString('nom', output["nom"]);
           await prefs.setString('prenom', output["prenoms"]);
@@ -213,7 +221,7 @@ class _SignFormState extends State<SignForm> {
             if (response.statusCode == 401) {
               circular = false;
               errorText = 'Identifiant ou mot de passe incorrects';
-              log.e('Erreur ${response.statusCode}: $errorText');
+              //log.e('Erreur ${response.statusCode}: $errorText');
 
               Flushbar(
                 margin: EdgeInsets.all(8),
@@ -225,80 +233,38 @@ class _SignFormState extends State<SignForm> {
                   color: Colors.blue[300],
                 ),
                 duration: Duration(seconds: 3),
-               
               )..show(context);
             }
 
             if (response.statusCode == 500) {
               circular = false;
-              errorText = 'Erreur de connexion au serveur';
-              log.e('Erreur ${response.statusCode}: $errorText');
-              Flushbar(
-                margin: EdgeInsets.all(8),
-                borderRadius: BorderRadius.circular(8),
-                message: errorText,
-                icon: Icon(
-                  Icons.info_outline,
-                  size: 28.0,
-                  color: Colors.blue[300],
-                ),
-                duration: Duration(seconds: 3),
-                
-              )..show(context);
+              errorText = 'Erreur système détectée';
+              CherryToast.error(
+                title: Text("Erreur réseau"),
+                displayTitle: false,
+                description: Text(errorText),
+                animationType: AnimationType.fromRight,
+                animationDuration: Duration(milliseconds: 1000),
+                autoDismiss: true)
+            .show(context);
             }
           });
+          _username.clear();
+          _password.clear();
         }
       } else {
         setState(() {
           circular = false;
         });
-        Flushbar(
-            title: "",
-            message:
-                "",
-            flushbarPosition: FlushbarPosition.TOP,
-            flushbarStyle: FlushbarStyle.FLOATING,
-            reverseAnimationCurve: Curves.decelerate,
-            forwardAnimationCurve: Curves.elasticOut,
-            backgroundColor: Colors.red,
-            boxShadows: [
-              BoxShadow(
-                  color: Colors.blue[800]!,
-                  offset: Offset(0.0, 2.0),
-                  blurRadius: 3.0)
-            ],
-            backgroundGradient:
-                LinearGradient(colors: [Colors.blueGrey, Colors.black]),
-            isDismissible: false,
-            duration: Duration(seconds: 4),
-            icon: Icon(
-              Icons.info_outline,
-              color: Colors.greenAccent,
-            ),
-            mainButton: FlatButton(
-              onPressed: () {},
-              child: Text(
-                "BAD",
-                style: TextStyle(color: Colors.amber),
-              ),
-            ),
-            showProgressIndicator: true,
-            progressIndicatorBackgroundColor: Colors.blueGrey,
-            titleText: Text(
-              "Connexion impossible",
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20.0,
-                  color: Colors.yellow[600],
-                  fontFamily: "ShadowsIntoLightTwo"),
-            ),
-            messageText: Text(
-              "Vérifiez votre connexion internet!",
-              style: TextStyle(
-                  fontSize: 18.0,
-                  color: Colors.green,
-                  fontFamily: "ShadowsIntoLightTwo"),
-            ));
+        CherryToast.error(
+                title: Text("Erreur réseau"),
+                displayTitle: false,
+                description: Text("Vérifiez votre connexion internet!"),
+                animationType: AnimationType.fromRight,
+                animationDuration: Duration(milliseconds: 1000),
+                autoDismiss: true)
+            .show(context);
+       
       }
     }
   }
