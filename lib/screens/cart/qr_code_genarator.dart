@@ -14,7 +14,6 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shop_app/enums.dart';
-import 'package:shop_app/helper/network_printer.dart';
 import 'package:shop_app/screens/cart/cart_screen.dart';
 import 'package:shop_app/screens/cart/devices.dart';
 import 'package:flutter_telpo/flutter_telpo.dart';
@@ -218,12 +217,13 @@ class _QrCodeGeneratorState extends State<QrCodeGenerator> {
             text: "Imprimer",
             press: () async {
              
+              final prefs = await SharedPreferences.getInstance();
 
               FlutterTelpo _printer = new FlutterTelpo();
 
               try {
                 _printer.connect();
-                _printer.isConnected().then((var isConneted) {
+                _printer.isConnected().then((var isConneted) async {
                   if (isConneted== true) {
                     List<dynamic> _printables = [];
 
@@ -239,7 +239,7 @@ class _QrCodeGeneratorState extends State<QrCodeGenerator> {
                           position: 1),
                     ]);
                     _printables.add(PrintQRCode(
-                        text: widget.codeFacture!, height: 200, width: 200, position: 1));
+                        text: widget.codeFacture!, height: 300, width: 300, position: 1));
                     _printables.addAll([
                       PrintRow(text: "Passez à la caisse SVP", fontSize: 2, position: 1),
                     ]);
@@ -251,6 +251,18 @@ class _QrCodeGeneratorState extends State<QrCodeGenerator> {
                         position: 1,
                       ),
                     );
+
+                    _printables.addAll([
+                      PrintRow(
+                        text: "Enregistrée par:",
+                        fontSize: 1,
+                        position: 1,
+                      ),
+                      PrintRow(
+                          text: "${ await prefs.getString('prenom')}",
+                          fontSize: 1,
+                          position: 1),
+                    ]);
 
                     _printer.print(_printables.toList());
                   }

@@ -12,6 +12,7 @@ import 'package:shop_app/screens/sign_in/sign_in_screen.dart';
 import 'package:shop_app/screens/splash/splash_screen.dart';
 
 import 'screens/cart/components/add_item_screen.dart';
+import 'screens/navigation/navigation.dart';
 import 'screens/sign_up/sign_up_screen.dart';
 import 'splash.dart';
 
@@ -22,7 +23,8 @@ final Map<String, WidgetBuilder> routes = {
   SplashScreen.routeName: (context) => SplashScreen(),
   SignInScreen.routeName: (context) => SignInScreen(),
   ForgotPasswordScreen.routeName: (context) => ForgotPasswordScreen(),
-  LoginSuccessScreen.routeName: (context) => LoginSuccessScreen(),
+  LoginSuccessScreen.routeName: (context) => LoginSuccessScreen(), 
+  Dashboard.routeName: (context) => Dashboard(),
   SignUpScreen.routeName: (context) => SignUpScreen(),
   CompleteProfileScreen.routeName: (context) => CompleteProfileScreen(),
   OtpScreen.routeName: (context) => OtpScreen(),

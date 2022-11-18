@@ -48,8 +48,12 @@ dependencies:
   intl:
   rxdart: ^0.26.0
   flutter_telpo: ^0.0.3
+  google_nav_bar: ^5.0.6
+  line_icons: ^2.0.1
+  dropdown_textfield: ^1.0.5
+  hive: ^2.2.3
   #telpo_flutter_sdk: ^0.1.1
-
+ 
 
 dev_dependencies:
   flutter_test:

@@ -5,18 +5,23 @@ import 'package:data_connection_checker_tv/data_connection_checker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shop_app/blocs/vente/bloc/vente_bloc.dart';
+import 'package:shop_app/components/default_button.dart';
 import 'package:shop_app/constants.dart';
 import 'package:shop_app/models/ArticleVente.dart';
 import 'package:shop_app/models/Cart.dart';
+import 'package:shop_app/models/cart_item.dart';
+import 'package:shop_app/size_config.dart';
 import 'package:substring_highlight/substring_highlight.dart';
 import '../../helper/networkHandler.dart';
 import 'components/body.dart';
-import 'components/check_out_card.dart';
 import 'components/styles.dart';
 import 'hero_dialogue_route.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class CartScreen extends StatefulWidget {
   static String routeName = "/cart";
@@ -26,56 +31,406 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
+ late List<ArticleVente> venteItems;
+ List<CartItem> cartItems=[];
+ bool loadingData=true;
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: buildAppBar(context),
-      body: Body(),
-      bottomNavigationBar: CheckoutCard(),
-    );
-  }
+    Size size= MediaQuery.of(context).size;
 
-  AppBar buildAppBar(BuildContext context) {
-    return AppBar(
-      title: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            "Achat du client",
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
-          ),
-          Container(
-            child: Row(
-              children: [
-                Text(
-                  "${demoCarts.length} commandes",
-                  style: Theme.of(context).textTheme.caption,
-                ),
-                GestureDetector(
-                  child: Hero(
-                    tag: _heroAddTodo,
-                    child: FaIcon(
-                      FontAwesomeIcons.cartPlus,
-                      color: kPrimaryColor,
-                      size: 30,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.of(context).push(HeroDialogRoute(
-                        builder: (context) {
-                          return const _AddTodoPopupCard();
-                        },
-                        settings: RouteSettings()));
-                  },
-                )
-              ],
+    return BlocListener<VenteBloc, VenteState>(
+      listener: (context, state){
+        if(state is VenteInitial){
+          loadingData=true;
+        }
+        if(state is VentePageLoadedState){
+          venteItems=state.avalaibleProducts.products;
+          cartItems=state.cartData;
+          loadingData=false;
+        }
+        if(state is ItemAddedCartState){
+          cartItems=state.cartItems;
+        }
+        if(state is ItemDeletingCartState){
+          cartItems=state.cartItems;
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "Achat du client",
+              style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
             ),
+            Container(
+              child: Row(
+                children: [
+                 BlocBuilder<VenteBloc, VenteState>(builder: (context, state){
+                  return Text(
+                    "${cartItems.length.toString()} articles",
+                    style: Theme.of(context).textTheme.caption,
+                  );
+                 },) ,
+                  GestureDetector(
+                    child: Hero(
+                      tag: _heroAddTodo,
+                      child: FaIcon(
+                        FontAwesomeIcons.cartPlus,
+                        color: kPrimaryColor,
+                        size: 30,
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.of(context).push(HeroDialogRoute(
+                          builder: (context) {
+                            return const _AddTodoPopupCard();
+                          },
+                          settings: RouteSettings()));
+                    },
+                  )
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+        body:  Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Enregistrement de commande',
+                style: Theme.of(context).textTheme.headline5!.copyWith(
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 30,
+                ),
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(5.0)),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Livraison incluse?',
+                        textAlign: TextAlign.left,
+                        style: Theme.of(context).textTheme.headline6,
+                      ),
+                    ),
+                   /*  BlocBuilder<BasketBloc, BasketState>(
+                      builder: (context, state) {
+                        if (state is BasketLoading) {
+                          return Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+                        if (state is BasketLoaded) {
+                          return SizedBox(
+                            width: 100,
+                            child: SwitchListTile(
+                                dense: false,
+                                value: state.basket.isdelivered!,
+                                activeColor:
+                                    Theme.of(context).colorScheme.primary,
+                                onChanged: (bool? newValue) {
+                                  context.read<BasketBloc>().add(
+                                        ToggleSwitch(),
+                                      );
+                                }),
+                          );
+                        } else {
+                          return Text('Something went wrong.');
+                        }
+                      },
+                    ), */
+                  ],
+                ),
+              ),
+              Text(
+                'Produits ajoutés',
+                style: Theme.of(context).textTheme.headline5!.copyWith(
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+              ),
+               BlocListener<VenteBloc, VenteState>(
+                listener: (context, state) {
+                  if (state is VenteInitial) {
+                   loadingData=true;
+                   
+                   
+                 /*    return Center(
+                      child: CircularProgressIndicator(),
+                    ); */
+                  }
+                  if (state is VentePageLoadedState) {
+
+                    venteItems=state.avalaibleProducts.products;
+                    cartItems=state.cartData;
+                    loadingData=false;
+                  }
+                  if(state is ItemAddedCartState){
+                  cartItems=state.cartItems;
+
+                  }
+
+                  if(state is ItemDeletingCartState){
+                       cartItems=state.cartItems;
+                  }
+                },
+                child:
+                  BlocBuilder<VenteBloc, VenteState>(builder:(context, state){
+                    return ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: cartItems.length,
+                            itemBuilder: (context, index) {
+                              return Container(
+                               /*  width: double.infinity,
+                                margin: const EdgeInsets.only(top: 5), */
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 30,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(5.0),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      '${state.',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headline5!
+                                          .copyWith(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .secondary,
+                                          ),
+                                    ),
+                                    SizedBox(
+                                      width: 20,
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        '${state.basket.itemQuantity(state.basket.products).keys.elementAt(index).name}',
+                                        textAlign: TextAlign.left,
+                                        style:
+                                            Theme.of(context).textTheme.headline6,
+                                      ),
+                                    ),
+                                    Text(
+                                      '\$${state.basket.itemQuantity(state.basket.products).keys.elementAt(index).price}',
+                                      style:
+                                          Theme.of(context).textTheme.headline6,
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          );;
+                  })
+                    return state.basket.products.length == 0
+                        ? Container(
+                            width: double.infinity,
+                            margin: const EdgeInsets.only(top: 5),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 30,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(5.0)),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Panier vide',
+                                  textAlign: TextAlign.left,
+                                  style: Theme.of(context).textTheme.headline6,
+                                ),
+                              ],
+                            ),
+                          )
+                        :
+                  } else {
+                    return Text('Une erreur s\'est produite');
+                  }
+                },
+              ),
+               
+             /*  Container(
+                width: double.infinity,
+                height: size.height * .13,
+                margin: const EdgeInsets.only(top: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 30,
+                ),
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(5.0)),
+                child: BlocBuilder<BasketBloc, BasketState>(
+                  builder: (context, state) {
+                    if (state is BasketLoading) {
+                      return Center(child: CircularProgressIndicator());
+                    }
+    
+                    if (state is BasketLoaded) {
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Subtotal',
+                                style: Theme.of(context).textTheme.headline6,
+                              ),
+                              Text(
+                                '\$${state.basket.subtotalString}',
+                                style: Theme.of(context).textTheme.headline6,
+                              ),
+                            ],
+                          ),
+                          SizedBox(height:3),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Frais de livraison',
+                                style: Theme.of(context).textTheme.headline6,
+                              ),
+                              Text(
+                                '\$5.00',
+                                style: Theme.of(context).textTheme.headline6,
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 3),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Total',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headline5!
+                                    .copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary),
+                              ),
+                              Text(
+                                '\$${state.basket.totalString}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headline5!
+                                    .copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary),
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    } else {
+                      return Text('Something went wrong');
+                    }
+                  },
+                ),
+              ),
+          */   ],
           ),
-        ],
+        ),
+       //Body(),
+        bottomNavigationBar: Container(
+        padding: EdgeInsets.symmetric(
+          vertical: getProportionateScreenWidth(15),
+          horizontal: getProportionateScreenWidth(30),
+        ),
+        // height: 174,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(30),
+            topRight: Radius.circular(30),
+          ),
+          boxShadow: [
+            BoxShadow(
+              offset: Offset(0, -15),
+              blurRadius: 20,
+              color: Color(0xFFDADADA).withOpacity(0.15),
+            )
+          ],
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(10),
+                    height: getProportionateScreenWidth(40),
+                    width: getProportionateScreenWidth(40),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F6F9),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: SvgPicture.asset("assets/icons/receipt.svg"),
+                  ),
+                   Text.rich(
+                    TextSpan(
+                      text: "Total:\n",
+                      style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.black,
+                          fontWeight: FontWeight.w400),
+                      children: [
+                        TextSpan(
+                          text: "50000 XOF",//"${state.basket.totalString} XOF",
+                          style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.black,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  )
+                      
+                ],
+              ),
+              SizedBox(height: getProportionateScreenHeight(20)),
+              Center(
+                child: 
+                DefaultButton(
+                  text: "Enregistrer",
+                  press: () {
+                   // Navigator.push(context, MaterialPageRoute(builder: (context)=> QrCodeGenerator(codeFacture: "1254848"))) ;
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
       ),
     );
   }
-}
+
+  }
 
 const String _heroAddTodo = 'add-todo-hero';
 
@@ -354,6 +709,7 @@ class _AddTodoPopupCardState extends State<_AddTodoPopupCard> {
                           ),
                         ),
                         onPressed: () {
+                          //context.read<VenteBloc>().add(ItemAddedCartEvent(cartItems: cartItems));
                           Navigator.of(context).pop();
                         },
                         child: const Text(
