@@ -58,6 +58,7 @@ class _VentesState extends State<Ventes> {
         controller: scrollController,
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: "add",
   backgroundColor: Colors.blue,
   foregroundColor: Colors.white,
   

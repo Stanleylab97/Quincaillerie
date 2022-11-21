@@ -31,77 +31,79 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
- late List<ArticleVente> venteItems;
- List<CartItem> cartItems=[];
- bool loadingData=true;
+  late List<ArticleVente> venteItems;
+  List<CartItem> cartItems = [];
+  bool loadingData = true;
 
   @override
   Widget build(BuildContext context) {
-    Size size= MediaQuery.of(context).size;
+    Size size = MediaQuery.of(context).size;
 
     return BlocListener<VenteBloc, VenteState>(
-      listener: (context, state){
-        if(state is VenteInitial){
-          loadingData=true;
+      listener: (context, state) {
+        if (state is VenteInitial) {
+          loadingData = true;
         }
-        if(state is VentePageLoadedState){
-          venteItems=state.avalaibleProducts.products;
-          cartItems=state.cartData;
-          loadingData=false;
+        if (state is VentePageLoadedState) {
+          venteItems = state.avalaibleProducts.products;
+          cartItems = state.cartData;
+          loadingData = false;
         }
-        if(state is ItemAddedCartState){
-          cartItems=state.cartItems;
+        if (state is ItemAddedCartState) {
+          cartItems = state.cartItems;
         }
-        if(state is ItemDeletingCartState){
-          cartItems=state.cartItems;
+        if (state is ItemDeletingCartState) {
+          cartItems = state.cartItems;
         }
       },
       child: Scaffold(
         appBar: AppBar(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              "Achat du client",
-              style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
-            ),
-            Container(
-              child: Row(
-                children: [
-                 BlocBuilder<VenteBloc, VenteState>(builder: (context, state){
-                  return Text(
-                    "${cartItems.length.toString()} articles",
-                    style: Theme.of(context).textTheme.caption,
-                  );
-                 },) ,
-                  GestureDetector(
-                    child: Hero(
-                      tag: _heroAddTodo,
-                      child: FaIcon(
-                        FontAwesomeIcons.cartPlus,
-                        color: kPrimaryColor,
-                        size: 30,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.of(context).push(HeroDialogRoute(
-                          builder: (context) {
-                            return const _AddTodoPopupCard();
-                          },
-                          settings: RouteSettings()));
-                    },
-                  )
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-        body:  Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              Text(
+                "Achat du client",
+                style:
+                    TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
+              ),
+              Container(
+                child: Row(
+                  children: [
+                    BlocBuilder<VenteBloc, VenteState>(
+                      builder: (context, state) {
+                        return Text(
+                          "${cartItems.length.toString()} articles",
+                          style: Theme.of(context).textTheme.caption,
+                        );
+                      },
+                    ),
+                    GestureDetector(
+                      child: Hero(
+                        tag: _heroAddTodo,
+                        child: FaIcon(
+                          FontAwesomeIcons.cartPlus,
+                          color: kPrimaryColor,
+                          size: 30,
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.of(context).push(HeroDialogRoute(
+                            builder: (context) {
+                              return const _AddTodoPopupCard();
+                            },
+                            settings: RouteSettings()));
+                      },
+                    )
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        body: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(
                 'Enregistrement de commande',
                 style: Theme.of(context).textTheme.headline5!.copyWith(
@@ -125,7 +127,7 @@ class _CartScreenState extends State<CartScreen> {
                         style: Theme.of(context).textTheme.headline6,
                       ),
                     ),
-                   /*  BlocBuilder<BasketBloc, BasketState>(
+                    /*  BlocBuilder<BasketBloc, BasketState>(
                       builder: (context, state) {
                         if (state is BasketLoading) {
                           return Center(
@@ -160,277 +162,145 @@ class _CartScreenState extends State<CartScreen> {
                       color: Theme.of(context).colorScheme.secondary,
                     ),
               ),
-               BlocListener<VenteBloc, VenteState>(
-                listener: (context, state) {
-                  if (state is VenteInitial) {
-                   loadingData=true;
-                   
-                   
-                 /*    return Center(
+              BlocListener<VenteBloc, VenteState>(listener: (context, state) {
+                if (state is VenteInitial) {
+                  loadingData = true;
+
+                  /*    return Center(
                       child: CircularProgressIndicator(),
                     ); */
-                  }
-                  if (state is VentePageLoadedState) {
+                }
+                if (state is VentePageLoadedState) {
+                  venteItems = state.avalaibleProducts.products;
+                  cartItems = state.cartData;
+                  loadingData = false;
+                }
+                if (state is ItemAddedCartState) {
+                  cartItems = state.cartItems;
+                }
 
-                    venteItems=state.avalaibleProducts.products;
-                    cartItems=state.cartData;
-                    loadingData=false;
-                  }
-                  if(state is ItemAddedCartState){
-                  cartItems=state.cartItems;
-
-                  }
-
-                  if(state is ItemDeletingCartState){
-                       cartItems=state.cartItems;
-                  }
-                },
-                child:
-                  BlocBuilder<VenteBloc, VenteState>(builder:(context, state){
-                    return ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: cartItems.length,
-                            itemBuilder: (context, index) {
-                              return Container(
-                               /*  width: double.infinity,
+                if (state is ItemDeletingCartState) {
+                  cartItems = state.cartItems;
+                }
+              }, child:
+                  BlocBuilder<VenteBloc, VenteState>(builder: (context, state) {
+                return ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: cartItems.length,
+                  itemBuilder: (context, index) {
+                    return Container(
+                      /*  width: double.infinity,
                                 margin: const EdgeInsets.only(top: 5), */
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 30,
-                                  vertical: 10,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(5.0),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      '${state.',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .headline5!
-                                          .copyWith(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .secondary,
-                                          ),
-                                    ),
-                                    SizedBox(
-                                      width: 20,
-                                    ),
-                                    Expanded(
-                                      child: Text(
-                                        '${state.basket.itemQuantity(state.basket.products).keys.elementAt(index).name}',
-                                        textAlign: TextAlign.left,
-                                        style:
-                                            Theme.of(context).textTheme.headline6,
-                                      ),
-                                    ),
-                                    Text(
-                                      '\$${state.basket.itemQuantity(state.basket.products).keys.elementAt(index).price}',
-                                      style:
-                                          Theme.of(context).textTheme.headline6,
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          );;
-                  })
-                    return state.basket.products.length == 0
-                        ? Container(
-                            width: double.infinity,
-                            margin: const EdgeInsets.only(top: 5),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 30,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(5.0)),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Panier vide',
-                                  textAlign: TextAlign.left,
-                                  style: Theme.of(context).textTheme.headline6,
-                                ),
-                              ],
-                            ),
-                          )
-                        :
-                  } else {
-                    return Text('Une erreur s\'est produite');
-                  }
-                },
-              ),
-               
-             /*  Container(
-                width: double.infinity,
-                height: size.height * .13,
-                margin: const EdgeInsets.only(top: 10),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 30,
-                ),
-                decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(5.0)),
-                child: BlocBuilder<BasketBloc, BasketState>(
-                  builder: (context, state) {
-                    if (state is BasketLoading) {
-                      return Center(child: CircularProgressIndicator());
-                    }
-    
-                    if (state is BasketLoaded) {
-                      return Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 30,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(5.0),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Subtotal',
-                                style: Theme.of(context).textTheme.headline6,
-                              ),
-                              Text(
-                                '\$${state.basket.subtotalString}',
-                                style: Theme.of(context).textTheme.headline6,
-                              ),
-                            ],
+                          Text("ssss"),
+                          SizedBox(
+                            width: 20,
                           ),
-                          SizedBox(height:3),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Frais de livraison',
-                                style: Theme.of(context).textTheme.headline6,
-                              ),
-                              Text(
-                                '\$5.00',
-                                style: Theme.of(context).textTheme.headline6,
-                              ),
-                            ],
+                          Expanded(
+                            child: Text(
+                              '',
+                              textAlign: TextAlign.left,
+                              style: Theme.of(context).textTheme.headline6,
+                            ),
                           ),
-                          SizedBox(height: 3),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Total',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headline5!
-                                    .copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary),
-                              ),
-                              Text(
-                                '\$${state.basket.totalString}',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headline5!
-                                    .copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary),
-                              ),
-                            ],
+                          Text(
+                            '\$',
+                            style: Theme.of(context).textTheme.headline6,
                           ),
                         ],
-                      );
-                    } else {
-                      return Text('Something went wrong');
-                    }
+                      ),
+                    );
                   },
-                ),
-              ),
-          */   ],
-          ),
-        ),
-       //Body(),
+                );
+              }))
+            ])),
+        //Body(),
         bottomNavigationBar: Container(
-        padding: EdgeInsets.symmetric(
-          vertical: getProportionateScreenWidth(15),
-          horizontal: getProportionateScreenWidth(30),
-        ),
-        // height: 174,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(30),
-            topRight: Radius.circular(30),
+          padding: EdgeInsets.symmetric(
+            vertical: getProportionateScreenWidth(15),
+            horizontal: getProportionateScreenWidth(30),
           ),
-          boxShadow: [
-            BoxShadow(
-              offset: Offset(0, -15),
-              blurRadius: 20,
-              color: Color(0xFFDADADA).withOpacity(0.15),
-            )
-          ],
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(10),
-                    height: getProportionateScreenWidth(40),
-                    width: getProportionateScreenWidth(40),
-                    decoration: BoxDecoration(
-                      color: Color(0xFFF5F6F9),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: SvgPicture.asset("assets/icons/receipt.svg"),
-                  ),
-                   Text.rich(
-                    TextSpan(
-                      text: "Total:\n",
-                      style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.black,
-                          fontWeight: FontWeight.w400),
-                      children: [
-                        TextSpan(
-                          text: "50000 XOF",//"${state.basket.totalString} XOF",
-                          style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.black,
-                              fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
-                  )
-                      
-                ],
-              ),
-              SizedBox(height: getProportionateScreenHeight(20)),
-              Center(
-                child: 
-                DefaultButton(
-                  text: "Enregistrer",
-                  press: () {
-                   // Navigator.push(context, MaterialPageRoute(builder: (context)=> QrCodeGenerator(codeFacture: "1254848"))) ;
-                  },
-                ),
-              ),
+          // height: 174,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(30),
+              topRight: Radius.circular(30),
+            ),
+            boxShadow: [
+              BoxShadow(
+                offset: Offset(0, -15),
+                blurRadius: 20,
+                color: Color(0xFFDADADA).withOpacity(0.15),
+              )
             ],
           ),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(10),
+                      height: getProportionateScreenWidth(40),
+                      width: getProportionateScreenWidth(40),
+                      decoration: BoxDecoration(
+                        color: Color(0xFFF5F6F9),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: SvgPicture.asset("assets/icons/receipt.svg"),
+                    ),
+                    Text.rich(
+                      TextSpan(
+                        text: "Total:\n",
+                        style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.black,
+                            fontWeight: FontWeight.w400),
+                        children: [
+                          TextSpan(
+                            text:
+                                "50000 XOF", //"${state.basket.totalString} XOF",
+                            style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.black,
+                                fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    )
+                  ],
+                ),
+                SizedBox(height: getProportionateScreenHeight(20)),
+                Center(
+                  child: DefaultButton(
+                    text: "Enregistrer",
+                    press: () {
+                      // Navigator.push(context, MaterialPageRoute(builder: (context)=> QrCodeGenerator(codeFacture: "1254848"))) ;
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
       ),
     );
   }
-
-  }
+}
 
 const String _heroAddTodo = 'add-todo-hero';
 
@@ -456,8 +326,46 @@ class _AddTodoPopupCardState extends State<_AddTodoPopupCard> {
   late String errorText;
 
   late List<ArticleVente> autoCompleteData = [];
+  bool haveSelectedProduct = false;
+  late TextEditingController controller = TextEditingController();
+  late TextEditingController qteCtrl = TextEditingController();
+  int qte = 0;
 
-  late TextEditingController controller;
+  Widget _incrementButton(int index) {
+   
+
+    return MaterialButton(
+      onPressed: () {
+        setState(() {
+          qte = index;
+          qte++;
+          qteCtrl.text = qte.toString();
+        });
+      },
+      color: Colors.white,
+      textColor: Colors.white,
+      child: Icon(Icons.add, color: Colors.black),
+      padding: EdgeInsets.all(16),
+      shape: CircleBorder(),
+    );
+  }
+
+  Widget _decrementButton(int index) {
+    return MaterialButton(
+      onPressed: () {
+        setState(() {
+          qte = index;
+          qte--;
+          qteCtrl.text = qte.toString();
+        });
+      },
+      color: Colors.white,
+      textColor: Colors.white,
+      child: Icon(Icons.remove, color: Colors.black),
+      padding: EdgeInsets.all(16),
+      shape: CircleBorder(),
+    );
+  }
 
   isConnected() async {
     return await DataConnectionChecker().connectionStatus;
@@ -557,12 +465,12 @@ class _AddTodoPopupCardState extends State<_AddTodoPopupCard> {
   @override
   void initState() {
     fetchAutoCompleteData();
+    qteCtrl.text = "1";
     super.initState();
   }
 
   @override
   void dispose() {
-  
     super.dispose();
   }
 
@@ -601,95 +509,124 @@ class _AddTodoPopupCardState extends State<_AddTodoPopupCard> {
                               child: CircularProgressIndicator(),
                             )
                           : Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                children: [
-                                  Autocomplete<ArticleVente>(
-                                    optionsBuilder:
-                                        (TextEditingValue textEditingValue) {
-                                      if (textEditingValue.text.isEmpty) {
-                                        return List.empty();
-                                      } else {
-                                        return autoCompleteData.where(
-                                            (article) => article.libelle
-                                                .toLowerCase()
-                                                .contains(textEditingValue.text
-                                                    .toLowerCase()));
-                                      }
-                                    },
-                                    optionsViewBuilder:
-                                        (context, onSelected, options) {
-                                      return Material(
-                                        elevation: 4,
-                                        child: ListView.separated(
-                                          padding: EdgeInsets.zero,
-                                          itemBuilder: (context, index) {
-                                            final option =
-                                                options.elementAt(index);
+                              padding: const EdgeInsets.only(left:16.0, top:16.0, bottom: 16.0),
+                              child: Column(children: [
+                                Autocomplete<ArticleVente>(
+                                  optionsBuilder:
+                                      (TextEditingValue textEditingValue) {
+                                    if (textEditingValue.text.isEmpty) {
+                                      return List.empty();
+                                    } else {
+                                      return autoCompleteData.where((article) =>
+                                          article.libelle
+                                              .toLowerCase()
+                                              .contains(textEditingValue.text
+                                                  .toLowerCase()));
+                                    }
+                                  },
+                                  optionsViewBuilder:
+                                      (context, onSelected, options) {
+                                    return Material(
+                                      elevation: 4,
+                                      child: ListView.separated(
+                                        padding: EdgeInsets.zero,
+                                        itemBuilder: (context, index) {
+                                          final option =
+                                              options.elementAt(index);
 
-                                            return ListTile(
-                                              title: SubstringHighlight(
-                                                text: option.libelle,
-                                                term: controller.text,
-                                                textStyleHighlight: TextStyle(
-                                                    fontWeight:
-                                              FontWeight.w700),
-                                              ),
-                                              onTap: () {
-                                                onSelected(option);
-                                              },
-                                            );
-                                          },
-                                          separatorBuilder: (context, index) =>
-                                              Divider(),
-                                          itemCount: options.length,
-                                        ),
-                                      );
-                                    },
-                                    onSelected: (selectedString) =>
-                                        print(selectedString.libelle),
-                                    displayStringForOption: (ArticleVente d) =>
-                                        '${d.libelle} ${d.prixUnitaire} ${d.qteStock}',
-                                    fieldViewBuilder: (context, controller,
-                                        focusNode, onEditingComplete) {
-                                      this.controller = controller;
+                                          return ListTile(
+                                            title: SubstringHighlight(
+                                              text: option.libelle,
+                                              term: controller.text,
+                                              textStyleHighlight: TextStyle(
+                                                  fontWeight: FontWeight.w700),
+                                            ),
+                                            onTap: () {
+                                              onSelected(option);
+                                            },
+                                          );
+                                        },
+                                        separatorBuilder: (context, index) =>
+                                            Divider(),
+                                        itemCount: options.length,
+                                      ),
+                                    );
+                                  },
+                                  onSelected: (selectedString) {
+                                    //  print(selectedString.libelle);
+                                    setState(() {
+                                      haveSelectedProduct = true;
+                                      qteCtrl.text = "1";
+                                    
+                                    });
+                                  },
+                                  displayStringForOption: (ArticleVente d) =>
+                                      '${d.libelle} ${d.prixUnitaire} Stock:${d.qteStock}',
+                                  fieldViewBuilder: (context, controller,
+                                      focusNode, onEditingComplete) {
+                                    this.controller = controller;
 
-                                      return TextField(
-                                        controller: controller,
-                                        focusNode: focusNode,
-                                        onEditingComplete: onEditingComplete,
-                                        decoration: InputDecoration(
-                                          border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                            borderSide: BorderSide(
-                                                color: Colors.grey[300]!),
-                                          ),
-                                          focusedBorder: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                            borderSide: BorderSide(
-                                                color: Colors.grey[300]!),
-                                          ),
-                                          enabledBorder: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                            borderSide: BorderSide(
-                                                color: Colors.grey[300]!),
-                                          ),
-                                          hintText: "Recherche d'article",
-                                          hintStyle:TextStyle(color: Colors.white),
-                                          prefixIcon: Icon(
-                                            Icons.search,
-                                            color: Colors.white,
-                                          ),
+                                    return TextField(
+                                      controller: controller,
+                                      focusNode: focusNode,
+                                      onEditingComplete: onEditingComplete,
+                                      decoration: InputDecoration(
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          borderSide: BorderSide(
+                                              color: Colors.grey[300]!),
                                         ),
-                                        style: TextStyle(color: Colors.white),
-                                      );
-                                    },
-                                  )
-                                ],
-                              ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          borderSide: BorderSide(
+                                              color: Colors.grey[300]!),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          borderSide: BorderSide(
+                                              color: Colors.grey[300]!),
+                                        ),
+                                        hintText: "Recherche d'article",
+                                        hintStyle:
+                                            TextStyle(color: Colors.white),
+                                        prefixIcon: Icon(
+                                          Icons.search,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      style: TextStyle(color: Colors.white),
+                                    );
+                                  },
+                                ),
+                                SizedBox(
+                                  height:
+                                      MediaQuery.of(context).size.height * .03,
+                                ),
+                                Visibility(
+                                    visible: haveSelectedProduct,
+                                    
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          _decrementButton(
+                                              int.parse(qteCtrl.text)),
+                                          Flexible(
+                                            child: TextFormField(
+                                              keyboardType: TextInputType.number,
+                                              style: TextStyle(color: Colors.white),
+                                              controller: qteCtrl,
+                                            ),
+                                          ),
+                                          _incrementButton(
+                                              int.parse(qteCtrl.text)),
+                                        ],
+                                      ),
+                                    ),
+                              ]),
                             ),
                       const Divider(
                         color: Colors.white,

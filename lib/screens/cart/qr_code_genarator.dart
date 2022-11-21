@@ -72,9 +72,9 @@ class _QrCodeGeneratorState extends State<QrCodeGenerator> {
     // Platform calls are catched on plugin-side. No need to use try-catch here,
     // as connect() method returns non-nullable boolean.
 
-   // final bool connected = await _telpoFlutterChannel.connect();
+    // final bool connected = await _telpoFlutterChannel.connect();
 
-  /*   setState(() {
+    /*   setState(() {
       _connected = connected;
 
       _telpoStatus = _connected ? 'Connected' : 'Telpo not supported';
@@ -144,158 +144,150 @@ class _QrCodeGeneratorState extends State<QrCodeGenerator> {
   }
 */
 
+    Future<void> _captureAndSharePng() async {
+      try {
+        RenderRepaintBoundary? boundary = globalKey.currentContext!
+            .findRenderObject() as RenderRepaintBoundary?;
+        var image = await boundary!.toImage();
+        ByteData? byteData =
+            await image.toByteData(format: ImageByteFormat.png);
+        Uint8List pngBytes = byteData!.buffer.asUint8List();
 
+        final tempDir = await getTemporaryDirectory();
+        final file = await new File('${tempDir.path}/image.png').create();
+        await file.writeAsBytes(pngBytes);
 
- 
-
-  Future<void> _captureAndSharePng() async {
-    try {
-      RenderRepaintBoundary? boundary = globalKey.currentContext!
-          .findRenderObject() as RenderRepaintBoundary?;
-      var image = await boundary!.toImage();
-      ByteData? byteData = await image.toByteData(format: ImageByteFormat.png);
-      Uint8List pngBytes = byteData!.buffer.asUint8List();
-
-      final tempDir = await getTemporaryDirectory();
-      final file = await new File('${tempDir.path}/image.png').create();
-      await file.writeAsBytes(pngBytes);
-
-      final channel = const MethodChannel('channel:me.alfian.share/share');
-      channel.invokeMethod('shareFile', 'image.png');
-    } catch (e) {
-      print(e.toString());
+        final channel = const MethodChannel('channel:me.alfian.share/share');
+        channel.invokeMethod('shareFile', 'image.png');
+      } catch (e) {
+        print(e.toString());
+      }
     }
   }
-
-
-}
 
   _contentWidget() {
     final bodyHeight = MediaQuery.of(context).size.height -
         MediaQuery.of(context).viewInsets.bottom;
-    return Container(
-      color: const Color(0xFFFFFFFF),
-      child: Column(
-        children: [
-          Expanded(
-            flex: 8,
-            child: Center(
-              child: RepaintBoundary(
-                  key: globalKey,
-                  child: QrImage(
-                    data: widget.codeFacture!,
-                    size: 0.3 * bodyHeight,
-                    embeddedImage:
-                        AssetImage('assets/images/AfricUni-carre.png'),
-                    embeddedImageStyle: QrEmbeddedImageStyle(
-                      size: Size(100, 100),
-                    ),
-                    errorStateBuilder: (cxt, err) {
-                      return Container(
-                        child: Center(
-                          child: Text(
-                            "Votre inscription est validée mais le code ne peut s'afficher",
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      );
-                    },
-                  )),
-            ),
-          ),
-          SizedBox(height: getProportionateScreenHeight(18)),
-          Text(
-            "Merci à vous $nom $prenom",
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16),
-          ),
-          SizedBox(height: getProportionateScreenHeight(18)),
-          Text("Un point bonus a été ajouté sur votre compte",
-              textAlign: TextAlign.center),
-          Spacer(flex: 2),
-          DefaultButton(
-            text: "Imprimer",
-            press: () async {
-             
-              final prefs = await SharedPreferences.getInstance();
-
-              FlutterTelpo _printer = new FlutterTelpo();
-
-              try {
-                _printer.connect();
-                _printer.isConnected().then((var isConneted) async {
-                  if (isConneted== true) {
-                    List<dynamic> _printables = [];
-
-                    _printables.addAll([
-                      PrintRow(
-                        text: "QUINCAILLERIE ANGE ROSE",
-                        fontSize: 2,
-                        position: 1,
-                      ),
-                      PrintRow(
-                          text: "*****************************",
-                          fontSize: 1,
-                          position: 1),
-                    ]);
-                    _printables.add(PrintQRCode(
-                        text: widget.codeFacture!, height: 300, width: 300, position: 1));
-                    _printables.addAll([
-                      PrintRow(text: "Passez à la caisse SVP", fontSize: 2, position: 1),
-                    ]);
-
-                    _printables.add(
-                      PrintRow(
-                        text: "Code valable jusqu'au 20/10/2022",
-                        fontSize: 1,
-                        position: 1,
+    return Column(
+      children: [
+        Expanded(
+          flex: 8,
+          child: Center(
+            child: RepaintBoundary(
+                key: globalKey,
+                child: QrImage(
+                  data: widget.codeFacture!,
+                  size: 0.3 * bodyHeight,
+                  embeddedImage: AssetImage('assets/images/AfricUni-carre.png'),
+                  embeddedImageStyle: QrEmbeddedImageStyle(
+                    size: Size(100, 100),
+                  ),
+                  errorStateBuilder: (cxt, err) {
+                    return Center(
+                      child: Text(
+                        "Votre inscription est validée mais le code ne peut s'afficher",
+                        textAlign: TextAlign.center,
                       ),
                     );
+                  },
+                )),
+          ),
+        ),
+        SizedBox(height: getProportionateScreenHeight(18)),
+        Text(
+          "Merci à vous $nom $prenom",
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 16),
+        ),
+        SizedBox(height: getProportionateScreenHeight(18)),
+        Text("Un point bonus a été ajouté sur votre compte",
+            textAlign: TextAlign.center),
+        Spacer(flex: 2),
+        DefaultButton(
+          text: "Imprimer",
+          press: () async {
+            final prefs = await SharedPreferences.getInstance();
 
-                    _printables.addAll([
-                      PrintRow(
-                        text: "Enregistrée par:",
+            FlutterTelpo _printer = new FlutterTelpo();
+
+            try {
+              _printer.connect();
+              _printer.isConnected().then((var isConneted) async {
+                if (isConneted == true) {
+                  List<dynamic> _printables = [];
+
+                  _printables.addAll([
+                    PrintRow(
+                      text: "QUINCAILLERIE ANGE ROSE",
+                      fontSize: 2,
+                      position: 1,
+                    ),
+                    PrintRow(
+                        text: "*****************************",
                         fontSize: 1,
-                        position: 1,
-                      ),
-                      PrintRow(
-                          text: "${ await prefs.getString('prenom')}",
-                          fontSize: 1,
-                          position: 1),
-                    ]);
+                        position: 1),
+                  ]);
+                  _printables.add(PrintQRCode(
+                      text: widget.codeFacture!,
+                      height: 300,
+                      width: 300,
+                      position: 1));
+                  _printables.addAll([
+                    PrintRow(
+                        text: "Passez à la caisse SVP",
+                        fontSize: 2,
+                        position: 1),
+                  ]);
 
-                    _printer.print(_printables.toList());
-                  }
-                });
-              } on PlatformException catch (e) {
-                print(e);
-              }
+                  _printables.add(
+                    PrintRow(
+                      text: "Code valable jusqu'au 20/10/2022",
+                      fontSize: 1,
+                      position: 1,
+                    ),
+                  );
+
+                  _printables.addAll([
+                    PrintRow(
+                      text: "Enregistrée par:",
+                      fontSize: 1,
+                      position: 1,
+                    ),
+                    PrintRow(
+                        text: "${await prefs.getString('prenom')}",
+                        fontSize: 1,
+                        position: 1),
+                  ]);
+
+                  _printer.print(_printables.toList());
+                }
+              });
+            } on PlatformException catch (e) {
+              print(e);
+            }
+          },
+        ),
+        SizedBox(height: getProportionateScreenHeight(18)),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: DefaultButton(
+            text: "Retour à l'achat",
+            press: () {
+              Navigator.pushReplacementNamed(context, CartScreen.routeName);
             },
           ),
-          SizedBox(height: getProportionateScreenHeight(18)),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: DefaultButton(
-              text: "Retour à l'achat",
-              press: () {
-                Navigator.pushReplacementNamed(context, CartScreen.routeName);
-              },
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-
- @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: _contentWidget(),
     );
   }
 }
-
 
 class DefaultButton extends StatelessWidget {
   const DefaultButton({
@@ -330,4 +322,3 @@ class DefaultButton extends StatelessWidget {
     );
   }
 }
-
