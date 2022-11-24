@@ -1,19 +1,15 @@
+import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
 import 'Product.dart';
 import 'Product.dart';
 
-class Cart {
-  final Product product;
-  final int numOfItem;
+class Cart extends Equatable {
+  final List<Product> products;
 
-  Cart({required this.product, required this.numOfItem});
+  Cart({this.products = const <Product>[]});
+
+ //int get total => products.fold(0, (total, current) => null)
+  @override
+  List<Object?> get props => [products];
 }
-
-// Demo data for our cart
-
-List<Cart> demoCarts = [
-  Cart(product: demoProducts[0], numOfItem: 2),
-  Cart(product: demoProducts[1], numOfItem: 1),
-  Cart(product: demoProducts[2], numOfItem: 1),
-];

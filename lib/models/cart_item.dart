@@ -2,7 +2,7 @@ import 'package:shop_app/models/ArticleVente.dart';
 
 class CartItem {
  late ArticleVente article;
- late double qte;
+ late int qte;
 
  CartItem({required this.article, required this.qte});
 }

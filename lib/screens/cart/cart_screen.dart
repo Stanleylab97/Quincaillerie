@@ -1,27 +1,33 @@
 import 'dart:convert';
 
 import 'package:another_flushbar/flushbar.dart';
+import 'package:cherry_toast/cherry_toast.dart';
+import 'package:cherry_toast/resources/arrays.dart';
 import 'package:data_connection_checker_tv/data_connection_checker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:get/get.dart';
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shop_app/blocs/vente/bloc/vente_bloc.dart';
+import 'package:shop_app/components/cart_item.dart';
 import 'package:shop_app/components/default_button.dart';
 import 'package:shop_app/constants.dart';
+import 'package:shop_app/controllers/cart_controller.dart';
 import 'package:shop_app/models/ArticleVente.dart';
 import 'package:shop_app/models/Cart.dart';
+import 'package:shop_app/models/cartItemForBackend.dart';
 import 'package:shop_app/models/cart_item.dart';
+import 'package:shop_app/screens/cart/qr_code_genarator.dart';
 import 'package:shop_app/size_config.dart';
 import 'package:substring_highlight/substring_highlight.dart';
 import '../../helper/networkHandler.dart';
 import 'components/body.dart';
 import 'components/styles.dart';
 import 'hero_dialogue_route.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 class CartScreen extends StatefulWidget {
   static String routeName = "/cart";
@@ -31,201 +37,219 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
+  final controller = Get.put(CartController());
   late List<ArticleVente> venteItems;
   List<CartItem> cartItems = [];
   bool loadingData = true;
+  TextEditingController nom_prenom = TextEditingController();
+  NetworkHandler networkHandler = NetworkHandler();
+  bool vis = true;
+  late String errorText;
+  bool validate = false;
+  bool circular = false;
+  Logger log = Logger();
+  bool statut = false;
+  bool _isObscure = true;
+  final _formKey = GlobalKey<FormState>();
+
+  isConnected() async {
+    return await DataConnectionChecker().connectionStatus;
+    // actively listen for status update
+  }
+
+  saveFacture() async {
+    //  if (_formKey.currentState!.validate()) {
+    final prefs = await SharedPreferences.getInstance();
+    // final storage = new FlutterSecureStorage();
+    setState(() {
+      circular = true;
+    });
+    var x = <CartItemForBackend>[];
+    print(controller.products.keys.toList());
+    for (var item in controller.products.keys.toList())
+      x.add(CartItemForBackend(
+          articleVenteId: item.id,
+          mtn: item.prixUnitaire.toDouble(),
+          qte: controller.products[item]));
+
+    var products = x.map((e) {
+      return {
+        "articleVenteId": e.articleVenteId,
+        "mtn": e.mtn,
+        "qte": e.qte,
+      };
+    }).toList();
+
+    String encodedProducts = json.encode(products);
+
+    DataConnectionStatus status = await isConnected();
+    if (status == DataConnectionStatus.connected) {
+      Map<String, dynamic> data = {
+        "client": "${nom_prenom.text.trim()}",
+        "listArticle": products,
+        "mtnTotale": controller.total.toDouble(),
+        "userName": "${prefs.getString('username')}"
+      };
+      var url = NetworkHandler.baseurl + "/saveVente/mobileVersion";
+      print(data);
+      var response =
+          await networkHandler.post(url, prefs.getString('token')!, data);
+
+      log.v(response.statusCode);
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        Map<String, dynamic> output = json.decode(response.body);
+
+        setState(() {
+          validate = true;
+          circular = false;
+        });
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => QrCodeGenerator(codeFacture: output['object']['codePrescription'])));
+      } else {
+        setState(() {
+          validate = false;
+          if (response.statusCode == 401) {
+            circular = false;
+            errorText = 'Identifiant ou mot de passe incorrects';
+            //log.e('Erreur ${response.statusCode}: $errorText');
+            Flushbar(
+              margin: EdgeInsets.all(8),
+              borderRadius: BorderRadius.circular(8),
+              message: errorText,
+              icon: Icon(
+                Icons.info_outline,
+                size: 28.0,
+                color: Colors.blue[300],
+              ),
+              duration: Duration(seconds: 3),
+            )..show(context);
+          }
+          if (response.statusCode == 500) {
+            circular = false;
+            errorText = 'Erreur système détectée';
+            CherryToast.error(
+                    title: Text("Erreur réseau",
+                        style: TextStyle(color: Colors.black)),
+                    displayTitle: false,
+                    description: Text(errorText),
+                    animationType: AnimationType.fromRight,
+                    animationDuration: Duration(milliseconds: 1000),
+                    autoDismiss: true)
+                .show(context);
+          } else {
+            circular = false;
+          }
+        });
+
+        nom_prenom.clear();
+      }
+    } else {
+      setState(() {
+        circular = false;
+      });
+      CherryToast.error(
+              title: Text("Erreur réseau"),
+              displayTitle: false,
+              description: Text(
+                "Vérifiez votre connexion internet!",
+                style: TextStyle(color: Colors.black),
+              ),
+              animationType: AnimationType.fromRight,
+              animationDuration: Duration(milliseconds: 1000),
+              autoDismiss: true)
+          .show(context);
+    }
+    // }
+  }
 
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
 
-    return BlocListener<VenteBloc, VenteState>(
-      listener: (context, state) {
-        if (state is VenteInitial) {
-          loadingData = true;
-        }
-        if (state is VentePageLoadedState) {
-          venteItems = state.avalaibleProducts.products;
-          cartItems = state.cartData;
-          loadingData = false;
-        }
-        if (state is ItemAddedCartState) {
-          cartItems = state.cartItems;
-        }
-        if (state is ItemDeletingCartState) {
-          cartItems = state.cartItems;
-        }
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Achat du client",
-                style:
-                    TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
-              ),
-              Container(
-                child: Row(
-                  children: [
-                    BlocBuilder<VenteBloc, VenteState>(
-                      builder: (context, state) {
-                        return Text(
-                          "${cartItems.length.toString()} articles",
-                          style: Theme.of(context).textTheme.caption,
-                        );
-                      },
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "Achat du client",
+              style:
+                  TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
+            ),
+            Container(
+              child: Row(
+                children: [
+                  Obx(
+                    () => Text(
+                      "${controller.products.length} articles",
+                      style: Theme.of(context).textTheme.caption,
                     ),
-                    GestureDetector(
-                      child: Hero(
-                        tag: _heroAddTodo,
-                        child: FaIcon(
-                          FontAwesomeIcons.cartPlus,
-                          color: kPrimaryColor,
-                          size: 30,
-                        ),
+                  ),
+                  GestureDetector(
+                    child: Hero(
+                      tag: _heroAddTodo,
+                      child: FaIcon(
+                        FontAwesomeIcons.cartPlus,
+                        color: kPrimaryColor,
+                        size: 30,
                       ),
-                      onTap: () {
-                        Navigator.of(context).push(HeroDialogRoute(
-                            builder: (context) {
-                              return const _AddTodoPopupCard();
-                            },
-                            settings: RouteSettings()));
-                      },
-                    )
-                  ],
-                ),
+                    ),
+                    onTap: () {
+                      Navigator.of(context).push(HeroDialogRoute(
+                          builder: (context) {
+                            return const _AddTodoPopupCard();
+                          },
+                          settings: RouteSettings()));
+                    },
+                  )
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-        body: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(
-                'Enregistrement de commande',
-                style: Theme.of(context).textTheme.headline5!.copyWith(
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 30,
-                ),
-                decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(5.0)),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Livraison incluse?',
-                        textAlign: TextAlign.left,
-                        style: Theme.of(context).textTheme.headline6,
-                      ),
-                    ),
-                    /*  BlocBuilder<BasketBloc, BasketState>(
-                      builder: (context, state) {
-                        if (state is BasketLoading) {
-                          return Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
-                        if (state is BasketLoaded) {
-                          return SizedBox(
-                            width: 100,
-                            child: SwitchListTile(
-                                dense: false,
-                                value: state.basket.isdelivered!,
-                                activeColor:
-                                    Theme.of(context).colorScheme.primary,
-                                onChanged: (bool? newValue) {
-                                  context.read<BasketBloc>().add(
-                                        ToggleSwitch(),
-                                      );
-                                }),
-                          );
-                        } else {
-                          return Text('Something went wrong.');
-                        }
-                      },
-                    ), */
-                  ],
-                ),
-              ),
-              Text(
-                'Produits ajoutés',
-                style: Theme.of(context).textTheme.headline5!.copyWith(
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
-              ),
-              BlocListener<VenteBloc, VenteState>(listener: (context, state) {
-                if (state is VenteInitial) {
-                  loadingData = true;
-
-                  /*    return Center(
-                      child: CircularProgressIndicator(),
-                    ); */
-                }
-                if (state is VentePageLoadedState) {
-                  venteItems = state.avalaibleProducts.products;
-                  cartItems = state.cartData;
-                  loadingData = false;
-                }
-                if (state is ItemAddedCartState) {
-                  cartItems = state.cartItems;
-                }
-
-                if (state is ItemDeletingCartState) {
-                  cartItems = state.cartItems;
-                }
-              }, child:
-                  BlocBuilder<VenteBloc, VenteState>(builder: (context, state) {
-                return ListView.builder(
+      ),
+      body: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(
+              'Enregistrement de commande',
+              style: Theme.of(context).textTheme.headline5!.copyWith(
+                    color: Theme.of(context).colorScheme.secondary,
+                  ),
+            ),
+            Text(
+              'Produits ajoutés',
+              style: Theme.of(context).textTheme.headline5!.copyWith(
+                    color: Theme.of(context).colorScheme.secondary,
+                  ),
+            ),
+            SizedBox(
+              height: size.height * .02,
+            ),
+            Expanded(
+              child: Obx(
+                () => ListView.builder(
                   shrinkWrap: true,
-                  itemCount: cartItems.length,
+                  itemCount: controller.products.length,
                   itemBuilder: (context, index) {
-                    return Container(
-                      /*  width: double.infinity,
-                                margin: const EdgeInsets.only(top: 5), */
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 30,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(5.0),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text("ssss"),
-                          SizedBox(
-                            width: 20,
-                          ),
-                          Expanded(
-                            child: Text(
-                              '',
-                              textAlign: TextAlign.left,
-                              style: Theme.of(context).textTheme.headline6,
-                            ),
-                          ),
-                          Text(
-                            '\$',
-                            style: Theme.of(context).textTheme.headline6,
-                          ),
-                        ],
-                      ),
+                    return CartProductCard(
+                      product: CartItem(
+                          article: controller.products.keys.toList()[index],
+                          qte: controller.products.values.toList()[index]),
+                      index: index,
+                      controller: controller,
                     );
                   },
-                );
-              }))
-            ])),
-        //Body(),
-        bottomNavigationBar: Container(
+                ),
+              ),
+            )
+          ])),
+      //Body(),
+      bottomNavigationBar: Obx(
+        () => Container(
           padding: EdgeInsets.symmetric(
             vertical: getProportionateScreenWidth(15),
             horizontal: getProportionateScreenWidth(30),
@@ -253,15 +277,26 @@ class _CartScreenState extends State<CartScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Container(
-                      padding: EdgeInsets.all(10),
-                      height: getProportionateScreenWidth(40),
-                      width: getProportionateScreenWidth(40),
-                      decoration: BoxDecoration(
-                        color: Color(0xFFF5F6F9),
-                        borderRadius: BorderRadius.circular(10),
+                    Expanded(
+                      child: TextField(
+                        controller: nom_prenom,
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          hintText: "Nom du client",
+                          hintStyle: TextStyle(color: Colors.black),
+                        ),
+                        style: TextStyle(color: Colors.black),
                       ),
-                      child: SvgPicture.asset("assets/icons/receipt.svg"),
+                    ),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width * .08,
                     ),
                     Text.rich(
                       TextSpan(
@@ -273,7 +308,7 @@ class _CartScreenState extends State<CartScreen> {
                         children: [
                           TextSpan(
                             text:
-                                "50000 XOF", //"${state.basket.totalString} XOF",
+                                "${controller.total} F", //"${state.basket.totalString} XOF",
                             style: TextStyle(
                                 fontSize: 18,
                                 color: Colors.black,
@@ -286,12 +321,14 @@ class _CartScreenState extends State<CartScreen> {
                 ),
                 SizedBox(height: getProportionateScreenHeight(20)),
                 Center(
-                  child: DefaultButton(
-                    text: "Enregistrer",
-                    press: () {
-                      // Navigator.push(context, MaterialPageRoute(builder: (context)=> QrCodeGenerator(codeFacture: "1254848"))) ;
-                    },
-                  ),
+                  child: circular
+                      ? CircularProgressIndicator()
+                      : ElevatedButton(
+                          child: Text("Enregistrer"),
+                          onPressed: () {
+                            saveFacture();
+                          },
+                        ),
                 ),
               ],
             ),
@@ -324,16 +361,15 @@ class _AddTodoPopupCardState extends State<_AddTodoPopupCard> {
   Logger log = Logger();
   String token = "";
   late String errorText;
-
+  final cartController = Get.put(CartController());
   late List<ArticleVente> autoCompleteData = [];
   bool haveSelectedProduct = false;
   late TextEditingController controller = TextEditingController();
   late TextEditingController qteCtrl = TextEditingController();
   int qte = 0;
+  late ArticleVente articleVente;
 
   Widget _incrementButton(int index) {
-   
-
     return MaterialButton(
       onPressed: () {
         setState(() {
@@ -509,7 +545,8 @@ class _AddTodoPopupCardState extends State<_AddTodoPopupCard> {
                               child: CircularProgressIndicator(),
                             )
                           : Padding(
-                              padding: const EdgeInsets.only(left:16.0, top:16.0, bottom: 16.0),
+                              padding: const EdgeInsets.only(
+                                  left: 16.0, top: 16.0, bottom: 16.0),
                               child: Column(children: [
                                 Autocomplete<ArticleVente>(
                                   optionsBuilder:
@@ -557,11 +594,17 @@ class _AddTodoPopupCardState extends State<_AddTodoPopupCard> {
                                     setState(() {
                                       haveSelectedProduct = true;
                                       qteCtrl.text = "1";
-                                    
+                                      qte = selectedString.qteStock;
+                                      articleVente = ArticleVente(
+                                          id: selectedString.id,
+                                          libelle: selectedString.libelle,
+                                          prixUnitaire:
+                                              selectedString.prixUnitaire,
+                                          qteStock: selectedString.qteStock);
                                     });
                                   },
                                   displayStringForOption: (ArticleVente d) =>
-                                      '${d.libelle} ${d.prixUnitaire} Stock:${d.qteStock}',
+                                      '${d.libelle} ${d.prixUnitaire}',
                                   fieldViewBuilder: (context, controller,
                                       focusNode, onEditingComplete) {
                                     this.controller = controller;
@@ -605,27 +648,16 @@ class _AddTodoPopupCardState extends State<_AddTodoPopupCard> {
                                   height:
                                       MediaQuery.of(context).size.height * .03,
                                 ),
-                                Visibility(
-                                    visible: haveSelectedProduct,
-                                    
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          _decrementButton(
-                                              int.parse(qteCtrl.text)),
-                                          Flexible(
-                                            child: TextFormField(
-                                              keyboardType: TextInputType.number,
-                                              style: TextStyle(color: Colors.white),
-                                              controller: qteCtrl,
-                                            ),
-                                          ),
-                                          _incrementButton(
-                                              int.parse(qteCtrl.text)),
-                                        ],
-                                      ),
-                                    ),
+                                TextFormField(
+                                  keyboardType: TextInputType.number,
+                                  decoration: InputDecoration(
+                                      suffix: Text(
+                                    "Stock: ${qte}",
+                                    style: TextStyle(color: Colors.white),
+                                  )),
+                                  style: TextStyle(color: Colors.white),
+                                  controller: qteCtrl,
+                                ),
                               ]),
                             ),
                       const Divider(
@@ -646,7 +678,8 @@ class _AddTodoPopupCardState extends State<_AddTodoPopupCard> {
                           ),
                         ),
                         onPressed: () {
-                          //context.read<VenteBloc>().add(ItemAddedCartEvent(cartItems: cartItems));
+                          cartController.addProduct(
+                              articleVente, int.parse(qteCtrl.text));
                           Navigator.of(context).pop();
                         },
                         child: const Text(

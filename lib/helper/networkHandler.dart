@@ -6,37 +6,38 @@ import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NetworkHandler {
-  String baseurl ="http://173.249.38.148:9094"; 
+  static String baseurl = "http://173.249.38.148:9094";
   var log = Logger();
-  
-
 
   Future<http.Response> get(String url) async {
-    final prefs = await SharedPreferences.getInstance(); 
+    final prefs = await SharedPreferences.getInstance();
     String token = prefs.getString("token").toString();
-   
+
     url = formater(url);
-    return await http.get(Uri.parse(url),headers: {
+    return await http.get(Uri.parse(url), headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
       'Authorization': 'Bearer $token',
-    }); 
-    
+    });
   }
 
-
-  Future<http.Response> post(String url, String token, Map<String, String> body) async {
-   
-    url = formater(url);
+  Future<http.Response> post(
+      String url, String token, Map<String, dynamic> body) async {
+    print(json.encode(body));
+    //url = formater(url);
     var response = await http.post(
       Uri.parse(url),
       body: json.encode(body),
-      headers: {"Content-type": "application/json","Authorization": "Bearer $token"},
+      headers: {
+        "Content-type": "application/json",
+        "Authorization": "Bearer $token"
+      },
     );
     return response;
   }
 
-   Future<http.Response> authenticateUser(String url, Map<String, String> body) async {
+  Future<http.Response> authenticateUser(
+      String url, Map<String, String> body) async {
     url = formater(url);
     var response = await http.post(
       Uri.parse(url),

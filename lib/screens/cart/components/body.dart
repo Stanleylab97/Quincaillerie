@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+/* import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:shop_app/models/Cart.dart';
 
@@ -14,7 +14,7 @@ class _BodyState extends State<Body> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding:
+     /*  */ padding:
           EdgeInsets.symmetric(horizontal: getProportionateScreenWidth(20)),
       child: ListView.builder(
         itemCount: demoCarts.length,
@@ -48,3 +48,4 @@ class _BodyState extends State<Body> {
     );
   }
 }
+ */

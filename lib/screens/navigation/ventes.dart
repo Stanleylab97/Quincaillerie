@@ -63,7 +63,7 @@ class _VentesState extends State<Ventes> {
   foregroundColor: Colors.white,
   
   onPressed: () {
-    Navigator.pushReplacementNamed(context, "/cart");
+    Navigator.pushNamed(context, "/cart");
   },
   child: Icon(Icons.add),
 ),

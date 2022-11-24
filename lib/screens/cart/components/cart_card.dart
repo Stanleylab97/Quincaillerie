@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+/* import 'package:flutter/material.dart';
 import 'package:shop_app/models/Cart.dart';
 
 import '../../../constants.dart';
@@ -11,7 +11,7 @@ class CartCard extends StatelessWidget {
   }) : super(key: key);
 
   final Cart cart;
-
+/*  */
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -58,3 +58,4 @@ class CartCard extends StatelessWidget {
     );
   }
 }
+ */

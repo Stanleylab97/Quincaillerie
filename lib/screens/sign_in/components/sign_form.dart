@@ -81,7 +81,11 @@ class _SignFormState extends State<SignForm> {
           ),
           FormError(errors: errors),
           SizedBox(height: getProportionateScreenHeight(20)),
-          ElevatedButton(
+          circular
+                  ? CircularProgressIndicator(
+                      color: Colors.blue,
+                    )
+                  :ElevatedButton(
               onPressed: () {
                 if (_formKey.currentState!.validate()) {
                   _formKey.currentState!.save();
@@ -90,11 +94,7 @@ class _SignFormState extends State<SignForm> {
                   KeyboardUtil.hideKeyboard(context);
                 }
               },
-              child: circular
-                  ? CircularProgressIndicator(
-                      color: Colors.white,
-                    )
-                  : Text(
+              child:  Text(
                       'Connexion',
                       style: TextStyle(
                         color: Colors.white,

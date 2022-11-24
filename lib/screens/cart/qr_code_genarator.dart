@@ -10,6 +10,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/src/foundation/key.dart';
 import 'package:flutter/src/widgets/framework.dart';
+import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -214,6 +215,8 @@ class _QrCodeGeneratorState extends State<QrCodeGenerator> {
               _printer.connect();
               _printer.isConnected().then((var isConneted) async {
                 if (isConneted == true) {
+                  
+                 final formattedDate = DateFormat('dd/MM/yyyy à HH:mm:ss').format(DateTime.now().add(Duration(days: 2)));
                   List<dynamic> _printables = [];
 
                   _printables.addAll([
@@ -241,7 +244,7 @@ class _QrCodeGeneratorState extends State<QrCodeGenerator> {
 
                   _printables.add(
                     PrintRow(
-                      text: "Code valable jusqu'au 20/10/2022",
+                      text: "Code valable jusqu'au $formattedDate",
                       fontSize: 1,
                       position: 1,
                     ),
