@@ -44,23 +44,25 @@ class _SplashState extends State<Splash> with TickerProviderStateMixin {
     SizeConfig().init(context);
 
     return Scaffold(
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Lottie.asset(
-            'assets/images/95381-qrcode.json',
-            controller: _controller,
-            onLoaded: (composition) {
-              _controller
-                ..duration = composition.duration
-                ..forward();
-              Future.delayed(composition.duration, () {
-                Navigator.pushReplacementNamed(context, SignInScreen.routeName);
-              });
-            },
-          ),
-        ],
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Lottie.asset(
+              'assets/images/95381-qrcode.json',
+              controller: _controller,
+              onLoaded: (composition) {
+                _controller
+                  ..duration = composition.duration
+                  ..forward();
+                Future.delayed(composition.duration, () {
+                  Navigator.pushReplacementNamed(context, SignInScreen.routeName);
+                });
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

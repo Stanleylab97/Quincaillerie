@@ -54,6 +54,7 @@ class _QrCodeGeneratorState extends State<QrCodeGenerator> {
   @override
   void initState() {
     geUserInfo();
+    printQr();
     super.initState();
   }
 
@@ -166,6 +167,64 @@ class _QrCodeGeneratorState extends State<QrCodeGenerator> {
     }
   }
 
+  void printQr() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    FlutterTelpo _printer = new FlutterTelpo();
+
+    try {
+      _printer.connect();
+      _printer.isConnected().then((var isConneted) async {
+        if (isConneted == true) {
+          final formattedDate = DateFormat('dd/MM/yyyy à HH:mm')
+              .format(DateTime.now().add(Duration(days: 2)));
+          List<dynamic> _printables = [];
+
+          _printables.addAll([
+            PrintRow(
+              text: "QUINCAILLERIE ANGE ROSE",
+              fontSize: 2,
+              position: 1,
+            ),
+            PrintRow(
+                text: "*****************************",
+                fontSize: 1,
+                position: 1),
+          ]);
+          _printables.add(PrintQRCode(
+              text: widget.codeFacture!, height: 300, width: 300, position: 1));
+          _printables.addAll([
+            PrintRow(text: "Passez à la caisse SVP", fontSize: 2, position: 1),
+          ]);
+
+          _printables.add(
+            PrintRow(
+              text: "Code valable jusqu'au $formattedDate",
+              fontSize: 1,
+              position: 1,
+            ),
+          );
+
+          _printables.addAll([
+            PrintRow(
+              text: "Prescripteur: ${await prefs.getString('prenom')}",
+              fontSize: 1,
+              position: 1,
+            ),
+            PrintRow(text: " ", fontSize: 1, position: 1),
+            PrintRow(text: " ", fontSize: 1, position: 1),
+            PrintRow(text: " ", fontSize: 1, position: 1),
+           
+          ]);
+
+          _printer.print(_printables.toList());
+        }
+      });
+    } on PlatformException catch (e) {
+      print(e);
+    }
+  }
+
   _contentWidget() {
     final bodyHeight = MediaQuery.of(context).size.height -
         MediaQuery.of(context).viewInsets.bottom;
@@ -204,7 +263,7 @@ class _QrCodeGeneratorState extends State<QrCodeGenerator> {
         Text("Un point bonus a été ajouté sur votre compte",
             textAlign: TextAlign.center),
         Spacer(flex: 2),
-        DefaultButton(
+        /*  DefaultButton(
           text: "Imprimer",
           press: () async {
             final prefs = await SharedPreferences.getInstance();
@@ -269,7 +328,7 @@ class _QrCodeGeneratorState extends State<QrCodeGenerator> {
               print(e);
             }
           },
-        ),
+        ), */
         SizedBox(height: getProportionateScreenHeight(18)),
         Padding(
           padding: const EdgeInsets.only(bottom: 10),

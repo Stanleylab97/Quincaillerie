@@ -16,13 +16,13 @@ class _LoginSuccessScreenState extends State<LoginSuccessScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration(seconds: 1),(() => Navigator.pushReplacementNamed(context, Dashboard.routeName)));
+    Future.delayed(Duration(seconds: 1),(() => Navigator.pushReplacementNamed(context, CartScreen.routeName)));
   }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Login Success"),
+        title: Text("Connexion réussie"),
       ),
       body: Body(),
     );
