@@ -52,10 +52,161 @@ class _CartScreenState extends State<CartScreen> {
   bool _isObscure = true;
   final _formKey = GlobalKey<FormState>();
 
+  
+  bool isLoading = false;
+
+  String token = "";
+
+  final cartController = Get.put(CartController());
+  late List<ArticleVente> autoCompleteData = [];
+  bool haveSelectedProduct = false;
+  late TextEditingController libcontroller = TextEditingController();
+  late TextEditingController qteCtrl = TextEditingController();
+  int qte = 0;
+  late ArticleVente articleVente;
+
+  Widget _incrementButton(int index) {
+    return MaterialButton(
+      onPressed: () {
+        setState(() {
+          qte = index;
+          qte++;
+          qteCtrl.text = qte.toString();
+        });
+      },
+      color: Colors.white,
+      textColor: Colors.white,
+      child: Icon(Icons.add, color: Colors.black),
+      padding: EdgeInsets.all(16),
+      shape: CircleBorder(),
+    );
+  }
+
+  Widget _decrementButton(int index) {
+    return MaterialButton(
+      onPressed: () {
+        setState(() {
+          qte = index;
+          qte--;
+          qteCtrl.text = qte.toString();
+        });
+      },
+      color: Colors.white,
+      textColor: Colors.white,
+      child: Icon(Icons.remove, color: Colors.black),
+      padding: EdgeInsets.all(16),
+      shape: CircleBorder(),
+    );
+  }
+
   isConnected() async {
     return await DataConnectionChecker().connectionStatus;
     // actively listen for status update
   }
+
+  getArticles() async {
+    DataConnectionStatus status = await isConnected();
+    List<ArticleVente> list = [];
+    if (status == DataConnectionStatus.connected) {
+      var response = await networkHandler.get("/allArticleVentes");
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic> output = json.decode(response.body);
+        var y = output['object']
+            .map((article) => ArticleVente.fromJson(article))
+            .toList();
+        // log.v(y);
+        for (ArticleVente i in y) {
+          list.add(i);
+        }
+        setState(() {
+          autoCompleteData = list;
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          if (response.statusCode == 401) {
+            errorText = 'Token invalide. Veuillez vous reconnecter';
+            log.e('Erreur ${response.statusCode}: $errorText');
+            isLoading = false;
+
+            Flushbar(
+              margin: EdgeInsets.all(8),
+              borderRadius: BorderRadius.circular(8),
+              message: errorText,
+              icon: Icon(
+                Icons.info_outline,
+                size: 28.0,
+                color: Colors.blue[300],
+              ),
+              duration: Duration(seconds: 3),
+            )..show(context);
+
+            autoCompleteData = [];
+          }
+
+          if (response.statusCode == 500) {
+            errorText = 'Erreur de connexion au serveur';
+            log.e('Erreur ${response.statusCode}: $errorText');
+            isLoading = false;
+            Flushbar(
+              margin: EdgeInsets.all(8),
+              borderRadius: BorderRadius.circular(8),
+              message: errorText,
+              icon: Icon(
+                Icons.info_outline,
+                size: 28.0,
+                color: Colors.blue[300],
+              ),
+              duration: Duration(seconds: 3),
+            )..show(context);
+            autoCompleteData = [];
+          }
+        });
+      }
+    } else {
+      setState(() {
+        autoCompleteData = [];
+      });
+      Flushbar(
+        margin: EdgeInsets.all(8),
+        borderRadius: BorderRadius.circular(8),
+        message: 'Veuillez vérifier votre connexion internet',
+        icon: Icon(
+          Icons.info_outline,
+          size: 28.0,
+          color: Colors.blue[300],
+        ),
+        duration: Duration(seconds: 3),
+      )..show(context);
+    }
+  }
+
+  Future fetchAutoCompleteData() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    getArticles();
+
+    setState(() {
+      isLoading = false;
+    });
+  }
+
+  @override
+  void initState() {
+    fetchAutoCompleteData();
+    qteCtrl.text = "1";
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+
 
   saveFacture() async {
     //  if (_formKey.currentState!.validate()) {
@@ -98,7 +249,7 @@ class _CartScreenState extends State<CartScreen> {
       log.v(response.statusCode);
       if (response.statusCode == 201 || response.statusCode == 200) {
         Map<String, dynamic> output = json.decode(response.body);
-
+          controller.clearCart;
         setState(() {
           validate = true;
           circular = false;
@@ -164,6 +315,193 @@ class _CartScreenState extends State<CartScreen> {
     // }
   }
 
+  showDataAlert() {
+  showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(
+              Radius.circular(
+                20.0,
+              ),
+            ),
+          ),
+          contentPadding: EdgeInsets.only(
+            top: 10.0,
+          ),
+          title: Text(
+            "Ajout de produit",
+            style: TextStyle(fontSize: 24.0),
+          ),
+          content: Container(
+            height: MediaQuery.of(context).size.height * .4,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(8.0),
+              child:  Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                       
+                        const Divider(
+                          color: Colors.black,
+                          thickness: 0.2,
+                        ),
+                        isLoading
+                            ? Center(
+                                child: CircularProgressIndicator(),
+                              )
+                            : Padding(
+                                padding: const EdgeInsets.only(
+                                    left: 16.0, top: 16.0, bottom: 16.0),
+                                child: Column(children: [
+                                  Autocomplete<ArticleVente>(
+                                    optionsBuilder:
+                                        (TextEditingValue textEditingValue) {
+                                      if (textEditingValue.text.isEmpty) {
+                                        return List.empty();
+                                      } else {
+                                        return autoCompleteData.where((article) =>
+                                            article.libelle
+                                                .toLowerCase()
+                                                .contains(textEditingValue.text
+                                                    .toLowerCase()));
+                                      }
+                                    },
+                                    optionsViewBuilder:
+                                        (context, onSelected, options) {
+                                      return Material(
+                                        elevation: 4,
+                                        child: ListView.separated(
+                                          padding: EdgeInsets.zero,
+                                          itemBuilder: (context, index) {
+                                            final option =
+                                                options.elementAt(index);
+    
+                                            return ListTile(
+                                              title: SubstringHighlight(
+                                                text: option.libelle,
+                                                term: libcontroller.text,
+                                                textStyleHighlight: TextStyle(
+                                                    fontWeight: FontWeight.w700),
+                                              ),
+                                              onTap: () {
+                                                onSelected(option);
+                                              },
+                                            );
+                                          },
+                                          separatorBuilder: (context, index) =>
+                                              Divider(),
+                                          itemCount: options.length,
+                                        ),
+                                      );
+                                    },
+                                    onSelected: (selectedString) {
+                                      //  print(selectedString.libelle);
+                                      setState(() {
+                                        haveSelectedProduct = true;
+                                        qteCtrl.text = "1";
+                                        qte = selectedString.qteStock;
+                                        articleVente = ArticleVente(
+                                            id: selectedString.id,
+                                            libelle: selectedString.libelle,
+                                            prixUnitaire:
+                                                selectedString.prixUnitaire,
+                                            qteStock: selectedString.qteStock);
+                                      });
+                                    },
+                                    displayStringForOption: (ArticleVente d) =>
+                                        '${d.libelle} ${d.prixUnitaire}',
+                                    fieldViewBuilder: (context, libcontroller,
+                                        focusNode, onEditingComplete) {
+                                      this.libcontroller = libcontroller;
+    
+                                      return TextField(
+                                        controller: libcontroller,
+                                        focusNode: focusNode,
+                                        onEditingComplete: onEditingComplete,
+                                        decoration: InputDecoration(
+                                          border: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            borderSide: BorderSide(
+                                                color: Colors.grey[300]!),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            borderSide: BorderSide(
+                                                color: Colors.grey[300]!),
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            borderSide: BorderSide(
+                                                color: Colors.grey[300]!),
+                                          ),
+                                          hintText: "Recherche d'article",
+                                          hintStyle:
+                                              TextStyle(color: Colors.black),
+                                          prefixIcon: Icon(
+                                            Icons.search,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                        style: TextStyle(color: Colors.black),
+                                      );
+                                    },
+                                  ),
+                                  SizedBox(
+                                    height:
+                                        MediaQuery.of(context).size.height * .03,
+                                  ),
+                                  TextFormField(
+                                    keyboardType: TextInputType.number,
+                                    decoration: InputDecoration(
+                                        suffix: Text(
+                                      "Stock: ${qte}",
+                                      style: TextStyle(color: Colors.black),
+                                    )),
+                                    style: TextStyle(color: Colors.black),
+                                    controller: qteCtrl,
+                                  ),
+                                ]),
+                              ),
+                        const Divider(
+                          color: Colors.white,
+                          thickness: 0.2,
+                        ),
+                        TextButton(
+                          style: ButtonStyle(
+                            overlayColor:
+                                MaterialStateProperty.all(Colors.deepPurple),
+                            backgroundColor:
+                                MaterialStateProperty.all(Colors.white),
+                            elevation: MaterialStateProperty.all(7),
+                            shape: MaterialStateProperty.all(
+                              RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                            ),
+                          ),
+                          onPressed: () {
+                            cartController.addProduct(
+                                articleVente, int.parse(qteCtrl.text));
+                            Navigator.of(context).pop();
+                          },
+                          child: const Text(
+                            'Ajouter',
+                            style: TextStyle(color: Colors.black),
+                          ),
+                        ),
+                      ],
+                    ),
+                 ),
+          ),
+        );
+      });
+}
+
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
@@ -197,11 +535,13 @@ class _CartScreenState extends State<CartScreen> {
                       ),
                     ),
                     onTap: () {
-                      Navigator.of(context).push(HeroDialogRoute(
+                     /*  Navigator.of(context).push(HeroDialogRoute(
                           builder: (context) {
                             return const _AddTodoPopupCard();
                           },
-                          settings: RouteSettings()));
+                          settings: RouteSettings())); */
+                         // print('xxxxx');
+                         showDataAlert();
                     },
                   )
                 ],
@@ -214,12 +554,6 @@ class _CartScreenState extends State<CartScreen> {
           padding: const EdgeInsets.all(20.0),
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(
-              'Enregistrement de commande',
-              style: Theme.of(context).textTheme.headline5!.copyWith(
-                    color: Theme.of(context).colorScheme.secondary,
-                  ),
-            ),
             Text(
               'Produits ajoutés',
               style: Theme.of(context).textTheme.headline5!.copyWith(
@@ -512,183 +846,185 @@ class _AddTodoPopupCardState extends State<_AddTodoPopupCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Hero(
-          tag: _heroAddTodo,
-          child: Material(
-            color: kPrimaryColor,
-            elevation: 2,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Center(
-                        child: Text(
-                          'Enregistrement de commande',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                      const Divider(
-                        color: Colors.white,
-                        thickness: 0.2,
-                      ),
-                      isLoading
-                          ? Center(
-                              child: CircularProgressIndicator(),
-                            )
-                          : Padding(
-                              padding: const EdgeInsets.only(
-                                  left: 16.0, top: 16.0, bottom: 16.0),
-                              child: Column(children: [
-                                Autocomplete<ArticleVente>(
-                                  optionsBuilder:
-                                      (TextEditingValue textEditingValue) {
-                                    if (textEditingValue.text.isEmpty) {
-                                      return List.empty();
-                                    } else {
-                                      return autoCompleteData.where((article) =>
-                                          article.libelle
-                                              .toLowerCase()
-                                              .contains(textEditingValue.text
-                                                  .toLowerCase()));
-                                    }
-                                  },
-                                  optionsViewBuilder:
-                                      (context, onSelected, options) {
-                                    return Material(
-                                      elevation: 4,
-                                      child: ListView.separated(
-                                        padding: EdgeInsets.zero,
-                                        itemBuilder: (context, index) {
-                                          final option =
-                                              options.elementAt(index);
-
-                                          return ListTile(
-                                            title: SubstringHighlight(
-                                              text: option.libelle,
-                                              term: controller.text,
-                                              textStyleHighlight: TextStyle(
-                                                  fontWeight: FontWeight.w700),
-                                            ),
-                                            onTap: () {
-                                              onSelected(option);
-                                            },
-                                          );
-                                        },
-                                        separatorBuilder: (context, index) =>
-                                            Divider(),
-                                        itemCount: options.length,
-                                      ),
-                                    );
-                                  },
-                                  onSelected: (selectedString) {
-                                    //  print(selectedString.libelle);
-                                    setState(() {
-                                      haveSelectedProduct = true;
-                                      qteCtrl.text = "1";
-                                      qte = selectedString.qteStock;
-                                      articleVente = ArticleVente(
-                                          id: selectedString.id,
-                                          libelle: selectedString.libelle,
-                                          prixUnitaire:
-                                              selectedString.prixUnitaire,
-                                          qteStock: selectedString.qteStock);
-                                    });
-                                  },
-                                  displayStringForOption: (ArticleVente d) =>
-                                      '${d.libelle} ${d.prixUnitaire}',
-                                  fieldViewBuilder: (context, controller,
-                                      focusNode, onEditingComplete) {
-                                    this.controller = controller;
-
-                                    return TextField(
-                                      controller: controller,
-                                      focusNode: focusNode,
-                                      onEditingComplete: onEditingComplete,
-                                      decoration: InputDecoration(
-                                        border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          borderSide: BorderSide(
-                                              color: Colors.grey[300]!),
-                                        ),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          borderSide: BorderSide(
-                                              color: Colors.grey[300]!),
-                                        ),
-                                        enabledBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          borderSide: BorderSide(
-                                              color: Colors.grey[300]!),
-                                        ),
-                                        hintText: "Recherche d'article",
-                                        hintStyle:
-                                            TextStyle(color: Colors.white),
-                                        prefixIcon: Icon(
-                                          Icons.search,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                      style: TextStyle(color: Colors.white),
-                                    );
-                                  },
-                                ),
-                                SizedBox(
-                                  height:
-                                      MediaQuery.of(context).size.height * .03,
-                                ),
-                                TextFormField(
-                                  keyboardType: TextInputType.number,
-                                  decoration: InputDecoration(
-                                      suffix: Text(
-                                    "Stock: ${qte}",
-                                    style: TextStyle(color: Colors.white),
-                                  )),
-                                  style: TextStyle(color: Colors.white),
-                                  controller: qteCtrl,
-                                ),
-                              ]),
-                            ),
-                      const Divider(
-                        color: Colors.white,
-                        thickness: 0.2,
-                      ),
-                      TextButton(
-                        style: ButtonStyle(
-                          overlayColor:
-                              MaterialStateProperty.all(Colors.deepPurple),
-                          backgroundColor:
-                              MaterialStateProperty.all(Colors.white),
-                          elevation: MaterialStateProperty.all(7),
-                          shape: MaterialStateProperty.all(
-                            RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
+    return Expanded(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Hero(
+            tag: _heroAddTodo,
+            child: Material(
+              color: kPrimaryColor,
+              elevation: 2,
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(10.0),
+    
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Center(
+                            child: Text(
+                              'Ajout de produit',
+                              style: TextStyle(color: Colors.white),
                             ),
                           ),
-                        ),
-                        onPressed: () {
-                          cartController.addProduct(
-                              articleVente, int.parse(qteCtrl.text));
-                          Navigator.of(context).pop();
-                        },
-                        child: const Text(
-                          'Ajouter',
-                          style: TextStyle(color: Colors.black),
-                        ),
+                          const Divider(
+                            color: Colors.white,
+                            thickness: 0.2,
+                          ),
+                          isLoading
+                              ? Center(
+                                  child: CircularProgressIndicator(),
+                                )
+                              : Padding(
+                                  padding: const EdgeInsets.only(
+                                      left: 16.0, top: 16.0, bottom: 16.0),
+                                  child: Column(children: [
+                                    Autocomplete<ArticleVente>(
+                                      optionsBuilder:
+                                          (TextEditingValue textEditingValue) {
+                                        if (textEditingValue.text.isEmpty) {
+                                          return List.empty();
+                                        } else {
+                                          return autoCompleteData.where((article) =>
+                                              article.libelle
+                                                  .toLowerCase()
+                                                  .contains(textEditingValue.text
+                                                      .toLowerCase()));
+                                        }
+                                      },
+                                      optionsViewBuilder:
+                                          (context, onSelected, options) {
+                                        return Material(
+                                          elevation: 4,
+                                          child: ListView.separated(
+                                            padding: EdgeInsets.zero,
+                                            itemBuilder: (context, index) {
+                                              final option =
+                                                  options.elementAt(index);
+      
+                                              return ListTile(
+                                                title: SubstringHighlight(
+                                                  text: option.libelle,
+                                                  term: controller.text,
+                                                  textStyleHighlight: TextStyle(
+                                                      fontWeight: FontWeight.w700),
+                                                ),
+                                                onTap: () {
+                                                  onSelected(option);
+                                                },
+                                              );
+                                            },
+                                            separatorBuilder: (context, index) =>
+                                                Divider(),
+                                            itemCount: options.length,
+                                          ),
+                                        );
+                                      },
+                                      onSelected: (selectedString) {
+                                        //  print(selectedString.libelle);
+                                        setState(() {
+                                          haveSelectedProduct = true;
+                                          qteCtrl.text = "1";
+                                          qte = selectedString.qteStock;
+                                          articleVente = ArticleVente(
+                                              id: selectedString.id,
+                                              libelle: selectedString.libelle,
+                                              prixUnitaire:
+                                                  selectedString.prixUnitaire,
+                                              qteStock: selectedString.qteStock);
+                                        });
+                                      },
+                                      displayStringForOption: (ArticleVente d) =>
+                                          '${d.libelle} ${d.prixUnitaire}',
+                                      fieldViewBuilder: (context, controller,
+                                          focusNode, onEditingComplete) {
+                                        this.controller = controller;
+      
+                                        return TextField(
+                                          controller: controller,
+                                          focusNode: focusNode,
+                                          onEditingComplete: onEditingComplete,
+                                          decoration: InputDecoration(
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              borderSide: BorderSide(
+                                                  color: Colors.grey[300]!),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              borderSide: BorderSide(
+                                                  color: Colors.grey[300]!),
+                                            ),
+                                            enabledBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              borderSide: BorderSide(
+                                                  color: Colors.grey[300]!),
+                                            ),
+                                            hintText: "Recherche d'article",
+                                            hintStyle:
+                                                TextStyle(color: Colors.white),
+                                            prefixIcon: Icon(
+                                              Icons.search,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          style: TextStyle(color: Colors.white),
+                                        );
+                                      },
+                                    ),
+                                    SizedBox(
+                                      height:
+                                          MediaQuery.of(context).size.height * .03,
+                                    ),
+                                    TextFormField(
+                                      keyboardType: TextInputType.number,
+                                      decoration: InputDecoration(
+                                          suffix: Text(
+                                        "Stock: ${qte}",
+                                        style: TextStyle(color: Colors.white),
+                                      )),
+                                      style: TextStyle(color: Colors.white),
+                                      controller: qteCtrl,
+                                    ),
+                                  ]),
+                                ),
+                          const Divider(
+                            color: Colors.white,
+                            thickness: 0.2,
+                          ),
+                          TextButton(
+                            style: ButtonStyle(
+                              overlayColor:
+                                  MaterialStateProperty.all(Colors.deepPurple),
+                              backgroundColor:
+                                  MaterialStateProperty.all(Colors.white),
+                              elevation: MaterialStateProperty.all(7),
+                              shape: MaterialStateProperty.all(
+                                RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                            ),
+                            onPressed: () {
+                              cartController.addProduct(
+                                  articleVente, int.parse(qteCtrl.text));
+                              Navigator.of(context).pop();
+                            },
+                            child: const Text(
+                              'Ajouter',
+                              style: TextStyle(color: Colors.black),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                  
                 ),
               ),
             ),

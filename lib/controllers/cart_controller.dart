@@ -43,6 +43,10 @@ class CartController extends GetxController {
     }
   }
 
+  void clearCart(){
+    _products.clear();
+  }
+
   get productSubtotal => _products.entries
       .map((article) => article.key.prixUnitaire * article.value)
       .toList();

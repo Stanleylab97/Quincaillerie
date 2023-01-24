@@ -6,7 +6,7 @@ import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NetworkHandler {
-  static String baseurl = "http://173.249.38.148:9094";
+  static String baseurl = "http://217.76.55.170:9094";
   var log = Logger();
 
   Future<http.Response> get(String url) async {
